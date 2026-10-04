@@ -19,8 +19,6 @@ permissions:
 
 env:
   GRADLE_VERSION: "9.6.0"
-  ANDROID_PLATFORM: "platforms;android-36"
-  ANDROID_BUILD_TOOLS: "build-tools;36.0.0"
 
 jobs:
   build:
@@ -36,33 +34,18 @@ jobs:
           java-version: "17"
           cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "${ANDROID_PLATFORM}" "${ANDROID_BUILD_TOOLS}"
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
 
-      - name: Validate Gradle configuration
-        run: gradle --no-daemon help --stacktrace
-
       - name: Build debug APK and run unit tests
         run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest --stacktrace
-
-      - name: Verify APK exists
-        run: test -s app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LongPaste-debug-apk
+          name: DocFlow-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
@@ -72,6 +55,6 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ inputs.release_tag }}
-          name: LongPaste Keyboard ${{ inputs.release_tag }}
+          name: DocFlow ${{ inputs.release_tag }}
           files: app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
