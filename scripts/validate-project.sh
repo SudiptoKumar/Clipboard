@@ -35,3 +35,20 @@ assert 'tools platform-tools' not in p
 assert 'setup-android@v3' not in p
 print('Workflow regression checks: PASS')
 PY
+
+python - <<'PY'
+from pathlib import Path
+p = Path('app/src/main/java/com/sudipto/longpaste/ime/LongPasteInputMethodService.kt').read_text()
+checks = {
+    'QWERTY layout': 'QWERTYUIOP',
+    'staggered second row': 'inset = 7',
+    'vector toolbar': 'iconKey(R.drawable.ic_clipboard',
+    'haptic tap': 'HapticFeedbackConstants.KEYBOARD_TAP',
+    'long-press haptic': 'HapticFeedbackConstants.LONG_PRESS',
+    'space long press': 'setOnLongClickListener',
+    'space paste': 'pasteLatestClipboard()',
+}
+for name, token in checks.items():
+    assert token in p, name
+print('Keyboard UX static checks: PASS')
+PY

@@ -1,4 +1,4 @@
-# LongPaste Keyboard v1.2.0
+# LongPaste Keyboard v1.3.0
 
 ## Fixes
 
@@ -26,6 +26,7 @@
 
 ## Build
 
-- Version code: 5
-- Version name: 1.2.0
+- Version code: 6
+- Version name: 1.3.0
 - Manual GitHub Actions build remains unchanged in policy: `workflow_dispatch` only.
+

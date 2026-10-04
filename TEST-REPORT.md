@@ -1,4 +1,4 @@
-# LongPaste Keyboard v1.2 Test Report
+# LongPaste Keyboard v1.3 Test Report
 
 ## Changes verified by source inspection
 
@@ -47,3 +47,12 @@ Use GitHub Actions for the APK build, then test on the target Android device:
 6. Search, pin, copy, delete, and clear operate correctly.
 7. Password fields do not capture clipboard content into LongPaste history.
 8. Switching back to the previous keyboard works through Android's input-method picker.
+
+
+## v1.3 UI validation
+- Staggered QWERTY row: implemented
+- Clear inter-key spacing: implemented
+- Vector keyboard/action icons: implemented
+- Haptic key feedback: implemented
+- Long-press Space paste: implemented
+- Normal Space click remains separate from long-press handling: implemented

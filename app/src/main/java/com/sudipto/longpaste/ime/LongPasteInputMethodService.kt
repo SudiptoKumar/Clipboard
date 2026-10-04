@@ -20,6 +20,7 @@ import android.view.inputmethod.ExtractedTextRequest
 import android.view.KeyEvent
 import android.widget.EditText
 import android.widget.HorizontalScrollView
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -67,7 +68,7 @@ class LongPasteInputMethodService : InputMethodService() {
         keyboardRoot = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(getColor(R.color.lp_background))
-            setPadding(dp(5), dp(4), dp(5), dp(3))
+            setPadding(dp(4), dp(3), dp(4), dp(3))
             layoutParams = ViewGroup.LayoutParams(-1, -2)
         }
         renderKeyboard()
@@ -110,20 +111,21 @@ class LongPasteInputMethodService : InputMethodService() {
         val toolbar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(2), 0, dp(2), 0)
         }
-        toolbar.addView(key("▣", 17f, flex = 0.9f, green = true, content = "Open clipboard") {
+        toolbar.addView(iconKey(R.drawable.ic_clipboard, 0.95f, green = true, content = "Open clipboard") {
             renderClipboardModeDirect()
         })
-        toolbar.addView(key("▶", 15f, flex = 0.9f, content = "Paste latest clipboard") {
+        toolbar.addView(iconKey(R.drawable.ic_paste, 0.95f, content = "Paste latest clipboard") {
             pasteLatestClipboard()
         })
-        toolbar.addView(key("COPY", 9.5f, flex = 1.0f, content = "Copy current field") {
+        toolbar.addView(iconKey(R.drawable.ic_copy, 0.95f, content = "Copy current field") {
             copyCurrentField()
         })
-        toolbar.addView(key("⇄", 17f, flex = 0.9f, content = "Switch keyboard") {
+        toolbar.addView(iconKey(R.drawable.ic_switch, 0.95f, content = "Switch keyboard") {
             switchKeyboard()
         })
-        toolbar.addView(key("⚙", 17f, flex = 0.9f, content = "LongPaste settings") {
+        toolbar.addView(iconKey(R.drawable.ic_settings, 0.95f, content = "LongPaste settings") {
             openSettings()
         })
         root.addView(toolbar, rowParams(38))
@@ -161,31 +163,33 @@ class LongPasteInputMethodService : InputMethodService() {
     }
 
     private fun addLetterRows(root: LinearLayout) {
-        addKeyRow(root, "QWERTYUIOP", 43)
-        addKeyRow(root, "ASDFGHJKL", 43)
+        addKeyRow(root, "QWERTYUIOP", 43, inset = 0)
+        addKeyRow(root, "ASDFGHJKL", 43, inset = 7)
 
         val row = horizontalRow()
-        row.addView(key(if (shifted) "⇧" else "⇧", 19f, flex = 1.28f, green = shifted, content = "Shift") {
+        row.setPadding(0, 0, 0, 0)
+        row.addView(iconKey(R.drawable.ic_shift, 1.28f, green = shifted, content = if (shifted) "Shift on" else "Shift off") {
             shifted = !shifted
             renderKeyboard()
         })
         "ZXCVBNM".forEach { c ->
             row.addView(key(displayChar(c), 16f) { commitText(displayChar(c)) })
         }
-        row.addView(key("⌫", 19f, flex = 1.28f, content = "Backspace") { backspace() })
+        row.addView(iconKey(R.drawable.ic_backspace, 1.28f, content = "Backspace") { backspace() })
         root.addView(row, rowParams(43))
     }
 
     private fun addBottomRow(root: LinearLayout) {
         val bottom = horizontalRow()
-        bottom.addView(key("?123", 11f, flex = 0.95f, content = "Numbers and symbols") {
+        bottom.setPadding(dp(1), 0, dp(1), 0)
+        bottom.addView(iconKey(R.drawable.ic_symbols, 1.05f, content = "Numbers and symbols") {
             mode = Mode.SYMBOLS
             renderKeyboard()
         })
         bottom.addView(key(",", 15f, flex = 0.72f) { commitText(",") })
         bottom.addView(spaceKey())
         bottom.addView(key(".", 15f, flex = 0.72f) { commitText(".") })
-        bottom.addView(key("↵", 19f, flex = 0.95f, content = "Enter") { enter() })
+        bottom.addView(iconKey(R.drawable.ic_enter, 1.05f, content = "Enter") { enter() })
         root.addView(bottom, rowParams(46))
     }
 
@@ -206,13 +210,13 @@ class LongPasteInputMethodService : InputMethodService() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
         }
-        toolbar.addView(key("ABC", 12f, flex = 1f, green = true) {
+        toolbar.addView(key("ABC", 12f, flex = 1f, green = true, content = "Alphabet keyboard") {
             mode = Mode.KEYBOARD
             renderKeyboard()
         })
-        toolbar.addView(key("▣", 17f, flex = 1f, content = "Clipboard") { renderClipboardModeDirect() })
-        toolbar.addView(key("⇄", 17f, flex = 1f, content = "Switch keyboard") { switchKeyboard() })
-        toolbar.addView(key("⚙", 17f, flex = 1f, content = "Settings") { openSettings() })
+        toolbar.addView(iconKey(R.drawable.ic_clipboard, 1f, content = "Clipboard") { renderClipboardModeDirect() })
+        toolbar.addView(iconKey(R.drawable.ic_switch, 1f, content = "Switch keyboard") { switchKeyboard() })
+        toolbar.addView(iconKey(R.drawable.ic_settings, 1f, content = "Settings") { openSettings() })
         root.addView(toolbar, rowParams(38))
 
         addKeyRow(root, "1234567890", 43)
@@ -223,24 +227,26 @@ class LongPasteInputMethodService : InputMethodService() {
         root.addView(row, rowParams(43))
 
         val bottom = horizontalRow()
-        bottom.addView(key("ABC", 11f, flex = 0.95f, green = true) {
+        bottom.addView(key("ABC", 11f, flex = 1.05f, green = true, content = "Alphabet keyboard") {
             mode = Mode.KEYBOARD
             renderKeyboard()
         })
         bottom.addView(key(",", 15f, flex = 0.72f) { commitText(",") })
         bottom.addView(spaceKey())
         bottom.addView(key(".", 15f, flex = 0.72f) { commitText(".") })
-        bottom.addView(key("↵", 19f, flex = 0.95f, content = "Enter") { enter() })
+        bottom.addView(iconKey(R.drawable.ic_enter, 1.05f, content = "Enter") { enter() })
         root.addView(bottom, rowParams(46))
     }
 
     private fun horizontalRow(): LinearLayout = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
+        setPadding(dp(1), 0, dp(1), 0)
     }
 
-    private fun addKeyRow(root: LinearLayout, labels: String, height: Int) {
+    private fun addKeyRow(root: LinearLayout, labels: String, height: Int, inset: Int = 0) {
         val row = horizontalRow()
+        if (inset > 0) row.setPadding(dp(inset), 0, dp(inset), 0)
         labels.forEach { c ->
             row.addView(key(displayChar(c), 16f) { commitText(displayChar(c)) })
         }
@@ -501,6 +507,35 @@ class LongPasteInputMethodService : InputMethodService() {
 
     private fun displayChar(c: Char): String = if (shifted) c.toString() else c.lowercase(Locale.US)
 
+    private fun iconKey(
+        iconRes: Int,
+        flex: Float = 1f,
+        green: Boolean = false,
+        content: String,
+        action: () -> Unit
+    ): ImageView {
+        val view = ImageView(this).apply {
+            setImageResource(iconRes)
+            scaleType = ImageView.ScaleType.CENTER
+            contentDescription = content
+            isClickable = true
+            isFocusable = true
+            isHapticFeedbackEnabled = true
+            background = pressableBackground(
+                if (green) getColor(R.color.lp_accent) else getColor(R.color.lp_surface_2),
+                if (green) getColor(R.color.lp_accent_pressed) else getColor(R.color.lp_surface_pressed)
+            )
+            setOnClickListener {
+                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                action()
+            }
+        }
+        val lp = LinearLayout.LayoutParams(0, -1, flex)
+        lp.setMargins(dp(3), dp(2), dp(3), dp(2))
+        view.layoutParams = lp
+        return view
+    }
+
     private fun key(
         label: String,
         textSize: Float,
@@ -529,14 +564,20 @@ class LongPasteInputMethodService : InputMethodService() {
                 if (green) getColor(R.color.lp_accent) else getColor(R.color.lp_surface_2),
                 if (green) getColor(R.color.lp_accent_pressed) else getColor(R.color.lp_surface_pressed)
             )
-            setOnClickListener { if (enabled) action() }
+            isHapticFeedbackEnabled = true
+            setOnClickListener {
+                if (enabled) {
+                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    action()
+                }
+            }
         }
         val lp = if (fixedWidth != null) {
             LinearLayout.LayoutParams(fixedWidth, -1)
         } else {
             LinearLayout.LayoutParams(0, -1, flex)
         }
-        lp.setMargins(dp(2), dp(2), dp(2), dp(2))
+        lp.setMargins(dp(3), dp(2), dp(3), dp(2))
         view.layoutParams = lp
         if (!enabled) view.alpha = 0.55f
         return view

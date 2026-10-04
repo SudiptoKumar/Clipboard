@@ -63,3 +63,15 @@ Required behavior:
 - Long press on Space inserts the most recent saved clipboard item.
 - Long-press paste must return `true` from the view long-click handler so the normal click action does not also fire.
 - Large clipboard insertion continues through `InputConnection.commitText()` with chunking.
+
+
+# v1.3 Keyboard UX Addendum
+
+## UX requirements
+
+- Letter rows shall use visible gaps and a centered/staggered second row to reduce accidental taps.
+- Toolbar actions shall use vector icons with accessible content descriptions.
+- Every normal keyboard key tap shall provide lightweight haptic feedback.
+- Long-press Space shall provide long-press haptic feedback and paste the latest saved clipboard item.
+- A successful Space long-press shall not also insert a normal space.
+- The bottom row shall visually prioritize the Space key as the largest key while maintaining balanced punctuation and action keys.

@@ -1,8 +1,8 @@
-# LongPaste Keyboard v1.1
+# LongPaste Keyboard v1.3
 
 LongPaste Keyboard is a privacy-first Android IME built around one idea: **use a real keyboard layout, but make long-text clipboard history a first-class part of the keyboard**.
 
-## What changed in v1.1
+## What changed in v1.3
 
 - Rebuilt the in-keyboard UI as a real QWERTY layout instead of an app-style screen.
 - Added a clipboard shelf above the keys for one-tap long-text insertion.
@@ -93,6 +93,14 @@ Build contract:
 See `TEST-REPORT.md` for validation details.
 
 
-## Space-bar paste
+## Space-bar paste and keyboard UX
 
 A short Space press inserts a normal space. A long press on Space pastes the latest saved clipboard item. This uses the same chunked `InputConnection` insertion path as the clipboard cards.
+
+### v1.3 keyboard refinements
+
+- Gboard-like staggered QWERTY rows with a centered second row and clearer key-to-key gaps.
+- Larger, visually distinct space bar and more balanced bottom-row proportions.
+- Vector icons for clipboard, paste, copy, switch keyboard, settings, shift, backspace, symbols, and enter.
+- Haptic feedback on keyboard taps and long-press Space.
+- Long-press Space remains dedicated to paste, so the normal Space action is not triggered on a successful long press.

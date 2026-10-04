@@ -171,7 +171,7 @@ class MainActivity : Activity() {
         root.addView(test, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
 
         root.addView(textView(
-            "LongPaste Keyboard v1.2 • Local-first • No ads • No Internet access",
+            "LongPaste Keyboard v1.3 • Local-first • No ads • No Internet access",
             12f,
             R.color.lp_muted,
             false
