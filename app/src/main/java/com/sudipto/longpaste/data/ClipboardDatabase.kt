@@ -9,6 +9,7 @@ data class ClipboardItem(
     val id: Long,
     val title: String?,
     val content: String,
+    val characterCount: Long,
     val createdAt: Long,
     val lastUsedAt: Long,
     val isPinned: Boolean
@@ -83,6 +84,7 @@ class ClipboardDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, n
                 COL_ID,
                 COL_TITLE,
                 "substr($COL_CONTENT, 1, 512) AS preview",
+                "length($COL_CONTENT) AS character_count",
                 "$COL_CREATED AS created",
                 "$COL_USED AS used",
                 "$COL_PINNED AS pinned"
@@ -97,6 +99,7 @@ class ClipboardDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, n
             val idIx = cursor.getColumnIndexOrThrow(COL_ID)
             val titleIx = cursor.getColumnIndexOrThrow(COL_TITLE)
             val previewIx = cursor.getColumnIndexOrThrow("preview")
+            val charCountIx = cursor.getColumnIndexOrThrow("character_count")
             val createdIx = cursor.getColumnIndexOrThrow("created")
             val usedIx = cursor.getColumnIndexOrThrow("used")
             val pinnedIx = cursor.getColumnIndexOrThrow("pinned")
@@ -106,6 +109,7 @@ class ClipboardDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, n
                         id = cursor.getLong(idIx),
                         title = cursor.getString(titleIx),
                         content = cursor.getString(previewIx) ?: "",
+                        characterCount = cursor.getLong(charCountIx),
                         createdAt = cursor.getLong(createdIx),
                         lastUsedAt = cursor.getLong(usedIx),
                         isPinned = cursor.getInt(pinnedIx) != 0
@@ -137,10 +141,12 @@ class ClipboardDatabase(context: Context) : SQLiteOpenHelper(context, DB_NAME, n
         null, null, null, "1"
     ).use { cursor ->
         if (!cursor.moveToFirst()) return null
+        val content = cursor.getString(cursor.getColumnIndexOrThrow(COL_CONTENT))
         ClipboardItem(
             id = cursor.getLong(cursor.getColumnIndexOrThrow(COL_ID)),
             title = cursor.getString(cursor.getColumnIndexOrThrow(COL_TITLE)),
-            content = cursor.getString(cursor.getColumnIndexOrThrow(COL_CONTENT)),
+            content = content,
+            characterCount = content.length.toLong(),
             createdAt = cursor.getLong(cursor.getColumnIndexOrThrow(COL_CREATED)),
             lastUsedAt = cursor.getLong(cursor.getColumnIndexOrThrow(COL_USED)),
             isPinned = cursor.getInt(cursor.getColumnIndexOrThrow(COL_PINNED)) != 0

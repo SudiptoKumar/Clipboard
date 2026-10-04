@@ -1,9 +1,9 @@
 <resources>
-    <color name="lp_background">#101114</color>
-    <color name="lp_surface">#1B1D22</color>
-    <color name="lp_surface_2">#252830</color>
-    <color name="lp_text">#F3F4F6</color>
-    <color name="lp_muted">#A8ADB8</color>
+    <color name="lp_background">#0E1013</color>
+    <color name="lp_surface">#191C21</color>
+    <color name="lp_surface_2">#252A31</color>
+    <color name="lp_text">#F5F7FA</color>
+    <color name="lp_muted">#A8AFBA</color>
     <color name="lp_accent">#10B981</color>
     <color name="lp_white">#FFFFFF</color>
 </resources>

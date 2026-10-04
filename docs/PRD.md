@@ -1,4 +1,4 @@
-# LongPaste Keyboard PRD v1.0
+# LongPaste Keyboard PRD v1.1
 
 ## Product
 LongPaste Keyboard is a privacy-first Android IME with persistent local clipboard history and large-text insertion.
