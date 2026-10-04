@@ -1,25 +1,19 @@
-# Validation Report
+# LongPaste Keyboard v1.0.1 Test Report
 
-Date: 2026-10-05
+## Source-level validation
 
-## Passed locally
-- Kotlin utility compilation with `kotlinc`
-- 1 MiB chunk reconstruction test
-- Unicode chunk reconstruction test
-- Chunk-count boundary test
-- UTF-8 byte-size helper test
-- XML parsing for all Android XML resources
-- GitHub Actions YAML parsing and policy checks
-- Manual-only `workflow_dispatch` trigger verified
-- No `push` or `pull_request` build trigger
-- No `android.permission.INTERNET` permission
-- IME service and `BIND_INPUT_METHOD` manifest wiring present
+- 1 MiB ASCII reconstruction: PASS
+- Unicode reconstruction including Bangla, emoji, accented Latin, and CJK: PASS
+- Chunk-count boundary tests: PASS
+- XML/resource structure: PASS
+- Workflow YAML structure: PASS
+- Manual-only `workflow_dispatch` trigger: PASS
+- No Internet permission in AndroidManifest: PASS
 
-## Not runnable in this environment
-The container does not include an Android SDK, Android platform JARs, Gradle distribution, or an emulator/device. Therefore a genuine `assembleDebug`, `testDebugUnitTest`, APK installation test, and POCO F3 paste benchmark could not be executed locally.
+## GitHub Actions fix
 
-## GitHub validation
-The included workflow installs Android API 36 and Build Tools 36.0.0, then runs the same Gradle build and unit-test commands intended for CI.
+The previous GitHub run stopped during Android SDK setup before Gradle started. The cause was the old `android-actions/setup-android@v3` flow requesting the deprecated `tools` SDK package. The workflow now uses `android-actions/setup-android@v4`, requests only `platform-tools` from that action, and installs the required Android platform/build-tools explicitly with `sdkmanager`.
 
-## Important
-The ZIP is therefore a **source-ready CI project**, not an APK that has been falsely marked as locally build-verified.
+## Build status
+
+The actual Android APK build must be executed on GitHub Actions because the local validation environment does not contain an Android SDK. This ZIP is therefore not labeled as locally APK-build-verified.

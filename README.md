@@ -19,11 +19,11 @@ LongPaste Keyboard does not modify Gboard. It becomes the selected Android keybo
 
 ## Build on GitHub
 
-The included workflow is manual-only and installs its Android SDK requirements:
+The included workflow is manual-only and installs its Android SDK requirements. It uses `android-actions/setup-android@v4` and does not request the deprecated Android SDK `tools` package:
 
 1. Push the repository to GitHub.
 2. Open **Actions**.
-3. Select **Build Android APK**.
+3. Select **Build LongPaste Keyboard APK**.
 4. Click **Run workflow**.
 5. Download **LongPaste-debug-apk**.
 
