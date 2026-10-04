@@ -165,13 +165,13 @@ class MainActivity : Activity() {
         root.addView(sectionLabel("TEST THE KEYBOARD"), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(24) })
         val test = card()
         test.addView(textView("1", 18f, R.color.lp_accent, true))
-        test.addView(textView("Open any app with a text field. Tap the keyboard picker and select LongPaste. You should see a full QWERTY keyboard with a clipboard shelf above it.", 13f, R.color.lp_text, false).apply {
+        test.addView(textView("Open any app with a text field. Tap the keyboard picker and select LongPaste. You should see a Gboard-like QWERTY keyboard. Long-press the space bar to paste the latest saved clipboard item.", 13f, R.color.lp_text, false).apply {
             setPadding(0, dp(5), 0, 0)
         })
         root.addView(test, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
 
         root.addView(textView(
-            "LongPaste Keyboard v1.1.1 • Local-first • No ads • No Internet access",
+            "LongPaste Keyboard v1.2 • Local-first • No ads • No Internet access",
             12f,
             R.color.lp_muted,
             false

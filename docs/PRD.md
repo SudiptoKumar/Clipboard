@@ -47,3 +47,19 @@ Android Clipboard → ClipboardManager → SQLite local history
 
 ## Acceptance target
 The unit-level chunking test must reconstruct a 1 MiB payload byte-for-byte/character-for-character with no loss. Full Android build/device validation must be performed by GitHub Actions and on the target POCO F3 because this environment does not contain an Android SDK.
+
+---
+
+# v1.2 Keyboard UX Addendum
+
+The default keyboard shall use a compact QWERTY layout visually inspired by modern Android keyboards without copying third-party branding.
+
+Required behavior:
+
+- Three standard alphabet rows plus a bottom utility row.
+- Compact toolbar and recent clipboard strip.
+- `?123` switches to symbols.
+- Short press on Space inserts a normal space.
+- Long press on Space inserts the most recent saved clipboard item.
+- Long-press paste must return `true` from the view long-click handler so the normal click action does not also fire.
+- Large clipboard insertion continues through `InputConnection.commitText()` with chunking.

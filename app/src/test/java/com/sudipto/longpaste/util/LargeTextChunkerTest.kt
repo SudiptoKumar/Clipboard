@@ -23,6 +23,16 @@ class LargeTextChunkerTest {
     }
 
     @Test
+    fun neverSplitsSurrogatePairAtChunkBoundary() {
+        val source = "a".repeat(15) + "🚀" + "b".repeat(15)
+        val chunks = LargeTextChunker.chunks(source, 16).map { it.toString() }.toList()
+        assertEquals(source, chunks.joinToString(""))
+        assertTrue(chunks.all { chunk ->
+            !chunk.startsWith("\uDC00") && !chunk.endsWith("\uD800")
+        })
+    }
+
+    @Test
     fun countReturnsCeiling() {
         assertEquals(0, LargeTextChunker.count("", 10))
         assertEquals(1, LargeTextChunker.count("1234567890", 10))

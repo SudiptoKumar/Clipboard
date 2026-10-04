@@ -2,6 +2,7 @@ package com.sudipto.longpaste.ime
 
 import android.content.ClipDescription
 import android.content.ClipboardManager
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -9,14 +10,15 @@ import android.graphics.drawable.RippleDrawable
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.text.InputType
+import android.text.TextUtils
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.view.KeyEvent
 import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -24,13 +26,14 @@ import android.widget.TextView
 import com.sudipto.longpaste.R
 import com.sudipto.longpaste.data.ClipboardDatabase
 import com.sudipto.longpaste.data.ClipboardItem
+import com.sudipto.longpaste.ui.MainActivity
 import com.sudipto.longpaste.util.LargeTextChunker
 import com.sudipto.longpaste.util.TextStats
 import java.util.Locale
 import java.util.concurrent.Executors
 
 class LongPasteInputMethodService : InputMethodService() {
-    private enum class Mode { KEYBOARD, CLIPBOARD }
+    private enum class Mode { KEYBOARD, CLIPBOARD, SYMBOLS }
 
     private lateinit var clipboardManager: ClipboardManager
     private lateinit var database: ClipboardDatabase
@@ -39,7 +42,6 @@ class LongPasteInputMethodService : InputMethodService() {
     private var keyboardRoot: LinearLayout? = null
     private var mode = Mode.KEYBOARD
     private var shifted = true
-    private var symbols = false
     private var searchQuery = ""
 
     private val clipboardListener = ClipboardManager.OnPrimaryClipChangedListener { capturePrimaryClip() }
@@ -65,7 +67,7 @@ class LongPasteInputMethodService : InputMethodService() {
         keyboardRoot = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(getColor(R.color.lp_background))
-            setPadding(dp(6), dp(5), dp(6), dp(4))
+            setPadding(dp(5), dp(4), dp(5), dp(3))
             layoutParams = ViewGroup.LayoutParams(-1, -2)
         }
         renderKeyboard()
@@ -75,7 +77,6 @@ class LongPasteInputMethodService : InputMethodService() {
     override fun onStartInput(attribute: EditorInfo?, restarting: Boolean) {
         super.onStartInput(attribute, restarting)
         shifted = true
-        symbols = false
         mode = Mode.KEYBOARD
     }
 
@@ -90,98 +91,160 @@ class LongPasteInputMethodService : InputMethodService() {
     private fun renderKeyboard() {
         val root = keyboardRoot ?: return
         root.removeAllViews()
-
         when (mode) {
             Mode.KEYBOARD -> renderKeyboardMode(root)
+            Mode.SYMBOLS -> renderSymbolsMode(root)
             Mode.CLIPBOARD -> renderClipboardMode(root)
         }
     }
 
+    /** Gboard-like structure: compact toolbar, suggestion/clipboard strip, 3 letter rows, bottom row. */
     private fun renderKeyboardMode(root: LinearLayout) {
-        val toolbar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        toolbar.addView(key("LongPaste", 12f, flex = 1.25f, green = true) { renderClipboardModeDirect() })
-        toolbar.addView(key("COPY", 11f, flex = 0.85f) { copyCurrentField() })
-        toolbar.addView(key("↔", 16f, flex = 0.55f) { switchKeyboard() })
-        toolbar.addView(key("⌫", 15f, flex = 0.65f) { backspace() })
-        root.addView(toolbar, rowParams(48))
-
-        addClipboardShelf(root)
-
-        if (symbols) {
-            addSymbolRows(root)
-        } else {
-            addLetterRows(root)
-        }
-
-        val bottom = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        bottom.addView(key("123", 10f, flex = 0.9f) { symbols = !symbols; renderKeyboard() })
-        bottom.addView(key(",", 14f) { commitText(",") })
-        bottom.addView(key("SPACE", 11f, flex = 3.8f) { commitText(" ") })
-        bottom.addView(key(".", 14f) { commitText(".") })
-        bottom.addView(key("↵", 18f, flex = 1.05f) { enter() })
-        root.addView(bottom, rowParams(48))
+        addToolbar(root)
+        addSuggestionStrip(root)
+        addLetterRows(root)
+        addBottomRow(root)
     }
 
-    private fun addLetterRows(root: LinearLayout) {
-        addKeyRow(root, "QWERTYUIOP")
-        addKeyRow(root, "ASDFGHJKL")
-
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        row.addView(key(if (shifted) "⇧" else "⇩", 17f, flex = 1.25f, green = shifted) {
-            shifted = !shifted
-            renderKeyboard()
+    private fun addToolbar(root: LinearLayout) {
+        val toolbar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        toolbar.addView(key("▣", 17f, flex = 0.9f, green = true, content = "Open clipboard") {
+            renderClipboardModeDirect()
         })
-        "ZXCVBNM".forEach { c ->
-            row.addView(key(displayChar(c), 15f) { commitText(displayChar(c)) })
-        }
-        row.addView(key("⌫", 18f, flex = 1.25f) { backspace() })
-        root.addView(row, rowParams(48))
+        toolbar.addView(key("▶", 15f, flex = 0.9f, content = "Paste latest clipboard") {
+            pasteLatestClipboard()
+        })
+        toolbar.addView(key("COPY", 9.5f, flex = 1.0f, content = "Copy current field") {
+            copyCurrentField()
+        })
+        toolbar.addView(key("⇄", 17f, flex = 0.9f, content = "Switch keyboard") {
+            switchKeyboard()
+        })
+        toolbar.addView(key("⚙", 17f, flex = 0.9f, content = "LongPaste settings") {
+            openSettings()
+        })
+        root.addView(toolbar, rowParams(38))
     }
 
-    private fun addSymbolRows(root: LinearLayout) {
-        addKeyRow(root, "1234567890")
-        addKeyRow(root, "@#$%&*-+")
-        addKeyRow(root, "()_!?/;:")
-    }
-
-    private fun addKeyRow(root: LinearLayout, labels: String) {
-        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        labels.forEach { c ->
-            val label = if (!symbols && c.isLetter()) displayChar(c) else c.toString()
-            row.addView(key(label, if (label.length > 1) 11f else 15f) {
-                commitText(if (!symbols && c.isLetter()) displayChar(c) else c.toString())
-            })
-        }
-        root.addView(row, rowParams(48))
-    }
-
-    private fun addClipboardShelf(root: LinearLayout) {
+    private fun addSuggestionStrip(root: LinearLayout) {
         val shelf = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
             overScrollMode = View.OVER_SCROLL_NEVER
         }
-        val itemsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        shelf.addView(itemsRow, FrameLayout.LayoutParams(-2, -1))
-        root.addView(shelf, rowParams(58))
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        shelf.addView(row, ViewGroup.LayoutParams(-2, -1))
+        root.addView(shelf, rowParams(39))
 
         dbExecutor.execute {
             val items = database.list(5, "")
             mainHandler.post {
-                itemsRow.removeAllViews()
+                row.removeAllViews()
                 if (items.isEmpty()) {
-                    itemsRow.addView(key("No saved clips yet", 11f, flex = 1.7f, enabled = false) { })
+                    row.addView(key("Clipboard ready", 11f, fixedWidth = dp(150), enabled = false) { })
                 } else {
                     items.take(4).forEach { item ->
-                        val label = TextStats.preview(item.content, 34)
-                        val button = key(label, 11f, fixedWidth = dp(172), multiLine = true) {
+                        val label = TextStats.preview(item.content, 24)
+                        row.addView(key(label.ifBlank { "(empty)" }, 10.5f, fixedWidth = dp(148), multiLine = true) {
                             pasteItem(item.id)
-                        }
-                        itemsRow.addView(button)
+                        })
                     }
-                    itemsRow.addView(key("ALL", 10f, fixedWidth = dp(62), green = true) { renderClipboardModeDirect() })
+                    row.addView(key("ALL", 10f, fixedWidth = dp(58), green = true) { renderClipboardModeDirect() })
                 }
             }
         }
+    }
+
+    private fun addLetterRows(root: LinearLayout) {
+        addKeyRow(root, "QWERTYUIOP", 43)
+        addKeyRow(root, "ASDFGHJKL", 43)
+
+        val row = horizontalRow()
+        row.addView(key(if (shifted) "⇧" else "⇧", 19f, flex = 1.28f, green = shifted, content = "Shift") {
+            shifted = !shifted
+            renderKeyboard()
+        })
+        "ZXCVBNM".forEach { c ->
+            row.addView(key(displayChar(c), 16f) { commitText(displayChar(c)) })
+        }
+        row.addView(key("⌫", 19f, flex = 1.28f, content = "Backspace") { backspace() })
+        root.addView(row, rowParams(43))
+    }
+
+    private fun addBottomRow(root: LinearLayout) {
+        val bottom = horizontalRow()
+        bottom.addView(key("?123", 11f, flex = 0.95f, content = "Numbers and symbols") {
+            mode = Mode.SYMBOLS
+            renderKeyboard()
+        })
+        bottom.addView(key(",", 15f, flex = 0.72f) { commitText(",") })
+        bottom.addView(spaceKey())
+        bottom.addView(key(".", 15f, flex = 0.72f) { commitText(".") })
+        bottom.addView(key("↵", 19f, flex = 0.95f, content = "Enter") { enter() })
+        root.addView(bottom, rowParams(46))
+    }
+
+    private fun spaceKey(): TextView {
+        val view = key("space", 12f, flex = 3.2f, content = "Space. Long press to paste latest clipboard") {
+            commitText(" ")
+        }
+        view.setOnLongClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            pasteLatestClipboard()
+            true
+        }
+        return view
+    }
+
+    private fun renderSymbolsMode(root: LinearLayout) {
+        val toolbar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+        toolbar.addView(key("ABC", 12f, flex = 1f, green = true) {
+            mode = Mode.KEYBOARD
+            renderKeyboard()
+        })
+        toolbar.addView(key("▣", 17f, flex = 1f, content = "Clipboard") { renderClipboardModeDirect() })
+        toolbar.addView(key("⇄", 17f, flex = 1f, content = "Switch keyboard") { switchKeyboard() })
+        toolbar.addView(key("⚙", 17f, flex = 1f, content = "Settings") { openSettings() })
+        root.addView(toolbar, rowParams(38))
+
+        addKeyRow(root, "1234567890", 43)
+        addKeyRow(root, "@#$%&*-+", 43)
+
+        val row = horizontalRow()
+        "()_!?/;:".forEach { c -> row.addView(key(c.toString(), 15f) { commitText(c.toString()) }) }
+        root.addView(row, rowParams(43))
+
+        val bottom = horizontalRow()
+        bottom.addView(key("ABC", 11f, flex = 0.95f, green = true) {
+            mode = Mode.KEYBOARD
+            renderKeyboard()
+        })
+        bottom.addView(key(",", 15f, flex = 0.72f) { commitText(",") })
+        bottom.addView(spaceKey())
+        bottom.addView(key(".", 15f, flex = 0.72f) { commitText(".") })
+        bottom.addView(key("↵", 19f, flex = 0.95f, content = "Enter") { enter() })
+        root.addView(bottom, rowParams(46))
+    }
+
+    private fun horizontalRow(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+    }
+
+    private fun addKeyRow(root: LinearLayout, labels: String, height: Int) {
+        val row = horizontalRow()
+        labels.forEach { c ->
+            row.addView(key(displayChar(c), 16f) { commitText(displayChar(c)) })
+        }
+        root.addView(row, rowParams(height))
     }
 
     private fun renderClipboardModeDirect() {
@@ -190,14 +253,14 @@ class LongPasteInputMethodService : InputMethodService() {
     }
 
     private fun renderClipboardMode(root: LinearLayout) {
-        val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        header.addView(key("⌨", 18f, flex = 0.7f, green = true) {
+        val header = horizontalRow()
+        header.addView(key("⌨", 18f, flex = 0.8f, green = true, content = "Keyboard") {
             mode = Mode.KEYBOARD
             renderKeyboard()
         })
-        header.addView(key("COPY TOP", 10f, flex = 1.2f) { copyTopResult() })
-        header.addView(key("CLEAR", 10f, flex = 0.9f) { clearHistoryAndRefresh() })
-        root.addView(header, rowParams(48))
+        header.addView(key("COPY", 10f, flex = 1f) { copyTopResult() })
+        header.addView(key("CLEAR", 10f, flex = 1f) { clearHistoryAndRefresh() })
+        root.addView(header, rowParams(40))
 
         val search = EditText(this).apply {
             hint = "Search clipboard"
@@ -217,9 +280,9 @@ class LongPasteInputMethodService : InputMethodService() {
                 override fun afterTextChanged(s: android.text.Editable?) = Unit
             })
         }
-        root.addView(search, LinearLayout.LayoutParams(-1, dp(44)).apply {
-            topMargin = dp(5)
-            bottomMargin = dp(5)
+        root.addView(search, LinearLayout.LayoutParams(-1, dp(40)).apply {
+            topMargin = dp(4)
+            bottomMargin = dp(4)
         })
 
         val scroll = ScrollView(this).apply { overScrollMode = View.OVER_SCROLL_IF_CONTENT_SCROLLS }
@@ -227,7 +290,7 @@ class LongPasteInputMethodService : InputMethodService() {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dp(2), 0, dp(2))
         }
-        scroll.addView(list)
+        scroll.addView(list, ViewGroup.LayoutParams(-1, -2))
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         refreshClipboardRows(root)
     }
@@ -268,6 +331,7 @@ class LongPasteInputMethodService : InputMethodService() {
             textSize = 13f
             setTextColor(getColor(R.color.lp_text))
             maxLines = 2
+            ellipsize = TextUtils.TruncateAt.END
         })
         card.addView(TextView(this).apply {
             text = "${item.characterCount} chars" + if (item.isPinned) " • pinned" else ""
@@ -276,7 +340,7 @@ class LongPasteInputMethodService : InputMethodService() {
             setPadding(0, dp(3), 0, dp(4))
         })
 
-        val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        val actions = horizontalRow()
         actions.addView(actionKey(if (item.isPinned) "UNPIN" else "PIN") {
             dbExecutor.execute {
                 database.setPinned(item.id, !item.isPinned)
@@ -324,12 +388,24 @@ class LongPasteInputMethodService : InputMethodService() {
         }
     }
 
+    private fun pasteLatestClipboard() {
+        dbExecutor.execute {
+            val item = database.list(1, "").firstOrNull()
+            if (item != null) {
+                mainHandler.post { pasteItem(item.id) }
+                return@execute
+            }
+            val fallback = clipboardManager.primaryClip?.getItemAt(0)?.coerceToText(this)?.toString().orEmpty()
+            if (fallback.isNotEmpty()) {
+                mainHandler.post { pasteLargeText(fallback) }
+            }
+        }
+    }
+
     private fun pasteItem(id: Long) {
         dbExecutor.execute {
             val item = database.get(id) ?: return@execute
-            mainHandler.post {
-                pasteLargeText(item.content)
-            }
+            mainHandler.post { pasteLargeText(item.content) }
         }
     }
 
@@ -366,7 +442,7 @@ class LongPasteInputMethodService : InputMethodService() {
         connection.beginBatchEdit()
         try {
             LargeTextChunker.chunks(text).forEach { chunk ->
-                connection.commitText(chunk, 1)
+                if (!connection.commitText(chunk, 1)) return@forEach
             }
         } finally {
             connection.endBatchEdit()
@@ -400,10 +476,14 @@ class LongPasteInputMethodService : InputMethodService() {
         }
     }
 
+    private fun openSettings() {
+        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
+
     private fun commitText(text: String) {
         val wasShifted = shifted
         currentInputConnection?.commitText(text, 1)
-        if (!symbols && text.length == 1 && text.first().isLetter() && wasShifted) {
+        if (mode == Mode.KEYBOARD && text.length == 1 && text.first().isLetter() && wasShifted) {
             shifted = false
             renderKeyboard()
         }
@@ -415,8 +495,7 @@ class LongPasteInputMethodService : InputMethodService() {
         if (action != EditorInfo.IME_ACTION_NONE && action != EditorInfo.IME_ACTION_UNSPECIFIED) {
             connection.performEditorAction(action)
         } else {
-            connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ENTER))
-            connection.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_ENTER))
+            sendKeyChar('\n')
         }
     }
 
@@ -430,6 +509,7 @@ class LongPasteInputMethodService : InputMethodService() {
         green: Boolean = false,
         enabled: Boolean = true,
         multiLine: Boolean = false,
+        content: String = label,
         action: () -> Unit
     ): TextView {
         val view = TextView(this).apply {
@@ -439,12 +519,16 @@ class LongPasteInputMethodService : InputMethodService() {
             gravity = Gravity.CENTER
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             maxLines = if (multiLine) 2 else 1
-            if (multiLine) ellipsize = android.text.TextUtils.TruncateAt.END
+            if (multiLine) ellipsize = TextUtils.TruncateAt.END
             isEnabled = enabled
             isClickable = enabled
             isFocusable = enabled
-            contentDescription = label
-            background = pressableBackground(if (green) getColor(R.color.lp_accent) else getColor(R.color.lp_surface_2), if (green) getColor(R.color.lp_accent) else getColor(R.color.lp_surface))
+            contentDescription = content
+            stateListAnimator = null
+            background = pressableBackground(
+                if (green) getColor(R.color.lp_accent) else getColor(R.color.lp_surface_2),
+                if (green) getColor(R.color.lp_accent_pressed) else getColor(R.color.lp_surface_pressed)
+            )
             setOnClickListener { if (enabled) action() }
         }
         val lp = if (fixedWidth != null) {

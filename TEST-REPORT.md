@@ -1,12 +1,12 @@
-# LongPaste Keyboard v1.1.1 Test Report
+# LongPaste Keyboard v1.2 Test Report
 
 ## Changes verified by source inspection
 
 - Launcher UI rebuilt as a real setup/control screen.
-- IME UI rebuilt as a real QWERTY keyboard with clipboard shelf.
+- IME UI uses a compact Gboard-like QWERTY layout with toolbar and recent clipboard strip.
 - Platform `Button` widgets removed from the keyboard and launcher action surface.
 - Clipboard mode includes search, pin/unpin, copy, paste, delete, and clear.
-- Shift, number/symbol mode, backspace, space, comma, period, and editor-action Enter are implemented.
+- Shift, number/symbol mode, backspace, space, comma, period, editor-action Enter, and long-press Space paste are implemented.
 - IME forces non-fullscreen input mode.
 - IME metadata declares next-IME switching support and points settings to `MainActivity`.
 - No Internet permission is present.
@@ -26,11 +26,16 @@
 - UTF-8 byte-count helper.
 - No deprecated Kotlin Android plugin configuration in live Gradle files.
 
-## CI build issue found and fixed
+## Build fix in v1.2
 
-The supplied GitHub Actions log showed one Kotlin compilation error in `LongPasteInputMethodService.kt`: `HorizontalScrollView.LayoutParams` was unresolved. This was corrected to the proper `FrameLayout.LayoutParams`. The version was bumped to 1.1.1.
+- Fixed the `HorizontalScrollView.LayoutParams` compilation failure reported by GitHub Actions. The child now uses compatible generic view layout parameters.
+- Large-text chunking now protects UTF-16 surrogate pairs at chunk boundaries.
 
-## Required CI/device verification
+## Android build limitation
+
+A full Android APK build was not executed in this preparation environment because Android SDK packages and a Gradle installation are not available locally and outbound network resolution is unavailable. The repository is therefore not labeled as device/CI-build verified here.
+
+## Required device verification
 
 Use GitHub Actions for the APK build, then test on the target Android device:
 
