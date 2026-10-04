@@ -1,10 +1,11 @@
-# LongPaste Keyboard v1.1
+# LongPaste Keyboard v1.1.1
 
 LongPaste Keyboard is a privacy-first Android IME built around one idea: **use a real keyboard layout, but make long-text clipboard history a first-class part of the keyboard**.
 
-## What changed in v1.1
+## What changed in v1.1.1
 
 - Rebuilt the in-keyboard UI as a real QWERTY layout instead of an app-style screen.
+- Fixed the Android build failure caused by using `HorizontalScrollView.LayoutParams`; the clipboard shelf now uses the correct `FrameLayout.LayoutParams`.
 - Added a clipboard shelf above the keys for one-tap long-text insertion.
 - Added a dedicated clipboard mode with search, pin/unpin, copy, paste, delete, and clear.
 - Replaced platform `Button` widgets with custom keyboard keys so text cannot disappear because of theme/button styling.

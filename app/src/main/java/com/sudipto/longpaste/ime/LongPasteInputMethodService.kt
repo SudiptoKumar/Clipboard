@@ -16,6 +16,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.view.KeyEvent
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -160,7 +161,7 @@ class LongPasteInputMethodService : InputMethodService() {
             overScrollMode = View.OVER_SCROLL_NEVER
         }
         val itemsRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        shelf.addView(itemsRow, HorizontalScrollView.LayoutParams(-2, -1))
+        shelf.addView(itemsRow, FrameLayout.LayoutParams(-2, -1))
         root.addView(shelf, rowParams(58))
 
         dbExecutor.execute {

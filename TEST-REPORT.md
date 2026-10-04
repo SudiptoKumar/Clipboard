@@ -1,4 +1,4 @@
-# LongPaste Keyboard v1.1 Test Report
+# LongPaste Keyboard v1.1.1 Test Report
 
 ## Changes verified by source inspection
 
@@ -26,11 +26,11 @@
 - UTF-8 byte-count helper.
 - No deprecated Kotlin Android plugin configuration in live Gradle files.
 
-## Android build limitation
+## CI build issue found and fixed
 
-A full Android APK build was not executed in this preparation environment because Android SDK packages and a Gradle installation are not available locally and outbound network resolution is unavailable. The repository is therefore not labeled as device/CI-build verified here.
+The supplied GitHub Actions log showed one Kotlin compilation error in `LongPasteInputMethodService.kt`: `HorizontalScrollView.LayoutParams` was unresolved. This was corrected to the proper `FrameLayout.LayoutParams`. The version was bumped to 1.1.1.
 
-## Required device verification
+## Required CI/device verification
 
 Use GitHub Actions for the APK build, then test on the target Android device:
 
